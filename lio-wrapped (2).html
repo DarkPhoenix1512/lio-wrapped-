@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Lio Wrapped – Baby-Party Auswertung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --ink:#0C0A14;
+    --paper:#FFF8EE;
+    --violet:#6C4CE0;
+    --violet-deep:#3A1F8F;
+    --pink:#FF3E7F;
+    --orange:#FF7A3D;
+    --yellow:#FFD23F;
+    --mint:#2CE6B0;
+    --blue:#3E8EFF;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    color:var(--paper);
+    overscroll-behavior:none;
+  }
+
+  .stage{
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .frame{
+    position:relative;
+    width:100%;
+    max-width:480px;
+    height:100%;
+    max-height:900px;
+    background:var(--ink);
+    overflow:hidden;
+    border-radius:0;
+    box-shadow:0 0 60px #00000080;
+  }
+
+  @media(min-width:520px){
+    .frame{ border-radius:28px; margin:16px 0; height:calc(100% - 32px); }
+  }
+
+  /* ---------- Progress bar ---------- */
+
+  .progress{
+    position:absolute;
+    top:0; left:0; right:0;
+    display:flex;
+    gap:5px;
+    padding:14px 14px 0;
+    z-index:30;
+  }
+
+  .progress .seg{
+    flex:1;
+    height:3px;
+    background:#ffffff30;
+    border-radius:99px;
+    overflow:hidden;
+  }
+
+  .progress .seg i{
+    display:block;
+    height:100%;
+    width:0%;
+    background:#fff;
+    border-radius:99px;
+  }
+
+  .progress .seg.done i{ width:100%; }
+
+  /* ---------- Tap zones ---------- */
+
+  .tap-zone{
+    position:absolute;
+    top:0; bottom:0;
+    width:38%;
+    z-index:20;
+  }
+  .tap-zone.left{ left:0; }
+  .tap-zone.right{ right:0; }
+
+  .nav-btn{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:25;
+    width:38px; height:38px;
+    border-radius:50%;
+    border:none;
+    background:#ffffff1f;
+    color:#fff;
+    font-size:14px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    backdrop-filter:blur(6px);
+  }
+  .nav-btn.prev{ left:10px; }
+  .nav-btn.next{ right:10px; }
+
+  @media(hover:hover){
+    .nav-btn{ display:flex; }
+  }
+
+  /* ---------- Slides ---------- */
+
+  .slides{
+    position:relative;
+    width:100%;
+    height:100%;
+  }
+
+  .slide{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:70px 30px 50px;
+    opacity:0;
+    visibility:hidden;
+    transform:scale(1.04);
+    transition:opacity .35s ease, transform .35s ease;
+  }
+
+  .slide.active{
+    opacity:1;
+    visibility:visible;
+    transform:scale(1);
+    z-index:1;
+  }
+
+  .slide::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-1;
+    opacity:.55;
+    background-image:
+      radial-gradient(circle at 20% 15%, #ffffff22, transparent 45%),
+      radial-gradient(circle at 85% 90%, #00000040, transparent 50%);
+  }
+
+  .s0{ background:radial-gradient(circle at 50% 20%, var(--violet), var(--violet-deep) 70%); }
+  .s1{ background:linear-gradient(160deg, var(--pink), var(--violet-deep)); }
+  .s2{ background:linear-gradient(160deg, var(--orange), #7A1F5C); }
+  .s3{ background:linear-gradient(160deg, var(--blue), var(--violet-deep)); }
+  .s4{ background:linear-gradient(160deg, #C97A2B, #4A1A5E); }
+  .s5{ background:linear-gradient(160deg, #B8B8B8, #3A3A4A); }
+  .s6{ background:linear-gradient(160deg, var(--yellow), #7A3D9C); }
+  .s7{ background:radial-gradient(circle at 50% 15%, var(--mint), #16324A 75%); }
+  .s8{ background:linear-gradient(160deg, var(--violet), #1A0F3D 75%); }
+
+  /* ---------- Live-Alter Grid ---------- */
+
+  .age-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    width:100%;
+  }
+
+  .age-cell{
+    background:#ffffff16;
+    border-radius:14px;
+    padding:14px 6px;
+    opacity:0;
+    transform:translateY(10px);
+  }
+
+  .slide.active .age-cell{
+    animation:popIn .5s ease forwards;
+  }
+  .slide.active .age-cell:nth-child(1){ animation-delay:.08s; }
+  .slide.active .age-cell:nth-child(2){ animation-delay:.16s; }
+  .slide.active .age-cell:nth-child(3){ animation-delay:.24s; }
+  .slide.active .age-cell:nth-child(4){ animation-delay:.32s; }
+  .slide.active .age-cell:nth-child(5){ animation-delay:.4s; }
+  .slide.active .age-cell:nth-child(6){ animation-delay:.48s; }
+
+  .age-val{
+    font-family:'Archivo Black', sans-serif;
+    font-size:clamp(24px, 7vw, 32px);
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+  }
+
+  .age-lab{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    opacity:.75;
+    margin-top:6px;
+  }
+
+  .eyebrow{
+    font-size:13px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-weight:600;
+    opacity:.85;
+    margin-bottom:14px;
+  }
+
+  .big-title{
+    font-family:'Archivo Black', sans-serif;
+    font-size:clamp(34px, 10vw, 52px);
+    line-height:1.02;
+    margin:0 0 14px;
+    text-shadow:0 2px 0 #00000020;
+  }
+
+  .lede{
+    font-size:16px;
+    opacity:.9;
+    max-width:300px;
+    margin:0 auto;
+  }
+
+  .tap-hint{
+    position:absolute;
+    bottom:26px;
+    left:0; right:0;
+    text-align:center;
+    font-size:12.5px;
+    opacity:.65;
+    letter-spacing:.04em;
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse{
+    0%,100%{ opacity:.4; }
+    50%{ opacity:.85; }
+  }
+
+  /* ---------- Stat stack (slide 1) ---------- */
+
+  .stat-stack{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+    width:100%;
+  }
+
+  .stat-row{
+    opacity:0;
+    transform:translateY(16px);
+  }
+
+  .slide.active .stat-row{
+    animation:popIn .55s cubic-bezier(.2,.9,.3,1.2) forwards;
+  }
+  .slide.active .stat-row:nth-child(1){ animation-delay:.15s; }
+  .slide.active .stat-row:nth-child(2){ animation-delay:.4s; }
+  .slide.active .stat-row:nth-child(3){ animation-delay:.65s; }
+
+  @keyframes popIn{
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .stat-row i{ font-size:15px; opacity:.75; margin-bottom:6px; display:block; }
+
+  .stat-row .val{
+    font-family:'Archivo Black', sans-serif;
+    font-size:clamp(30px,9vw,42px);
+    line-height:1;
+  }
+
+  .stat-row .lab{
+    font-size:12.5px;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    opacity:.75;
+    margin-top:6px;
+  }
+
+  /* ---------- Field list (slide 3) ---------- */
+
+  .field-list{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:56vh;
+    overflow-y:auto;
+    padding:2px 2px 4px;
+  }
+
+  .field-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:#ffffff16;
+    border-radius:12px;
+    padding:10px 14px;
+    text-align:left;
+    opacity:0;
+    transform:translateX(-12px);
+  }
+
+  .slide.active .field-row{
+    animation:slideRow .45s ease forwards;
+  }
+
+  @keyframes slideRow{
+    to{ opacity:1; transform:translateX(0); }
+  }
+
+  .field-row .fr-rank{
+    font-family:'Archivo Black', sans-serif;
+    font-size:15px;
+    width:24px;
+    opacity:.8;
+  }
+  .field-row .fr-name{ flex:1; font-weight:600; font-size:14.5px; }
+  .field-row .fr-pts{ font-weight:700; font-size:14.5px; font-variant-numeric:tabular-nums; }
+
+  /* ---------- Podium reveal slides ---------- */
+
+  .medal-badge{
+    width:76px; height:76px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+    margin-bottom:20px;
+    background:#ffffff26;
+    box-shadow:0 0 0 4px #ffffff30;
+    animation:badgeIn .6s cubic-bezier(.2,.9,.3,1.3) .1s both;
+  }
+
+  @keyframes badgeIn{
+    from{ opacity:0; transform:scale(.3) rotate(-15deg); }
+    to{ opacity:1; transform:scale(1) rotate(0); }
+  }
+
+  .rank-name{
+    font-family:'Archivo Black', sans-serif;
+    font-size:clamp(30px,9vw,44px);
+    margin:6px 0 4px;
+    opacity:0;
+    animation:popIn .5s ease .3s forwards;
+  }
+
+  .rank-points{
+    font-size:16px;
+    opacity:0;
+    animation:popIn .5s ease .5s forwards;
+  }
+
+  .rank-points b{ font-size:22px; }
+
+  /* ---------- Winner extras ---------- */
+
+  .crown-float{
+    font-size:40px;
+    color:#3A2A00;
+    margin-bottom:6px;
+    animation:crownDrop .7s cubic-bezier(.2,.8,.3,1.4) both, bob 2.2s ease-in-out 1s infinite;
+  }
+
+  @keyframes crownDrop{
+    from{ opacity:0; transform:translateY(-40px) scale(.6); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  @keyframes bob{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-5px); }
+  }
+
+  #confetti{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:5;
+  }
+
+  .confetto{
+    position:absolute;
+    top:-16px;
+    border-radius:2px;
+    opacity:0;
+    animation:fall linear forwards;
+  }
+
+  @keyframes fall{
+    0%{ opacity:0; transform:translateY(0) rotate(0deg); }
+    8%{ opacity:1; }
+    100%{ opacity:0; transform:translateY(115%) rotate(360deg); }
+  }
+
+  /* ---------- Final recap slide ---------- */
+
+  .recap-card{
+    background:#00000030;
+    border:1px solid #ffffff30;
+    border-radius:20px;
+    padding:18px 16px;
+    width:100%;
+    backdrop-filter:blur(4px);
+  }
+
+  .recap-title{
+    font-family:'Archivo Black', sans-serif;
+    font-size:20px;
+    margin-bottom:12px;
+  }
+
+  .recap-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:7px 4px;
+    font-size:14px;
+    border-bottom:1px solid #ffffff20;
+  }
+  .recap-row:last-child{ border-bottom:none; }
+  .recap-row .rr-left{ display:flex; align-items:center; gap:8px; text-align:left; }
+  .recap-row .rr-rank{ width:18px; font-weight:700; opacity:.8; font-size:13px; }
+  .recap-row .rr-pts{ font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .replay-btn{
+    margin-top:22px;
+    border:1.5px solid #ffffff70;
+    background:#ffffff18;
+    color:#fff;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:11px 22px;
+    border-radius:99px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+    .slide{ opacity:1 !important; visibility:visible !important; transform:none !important; position:relative !important; }
+    .slides{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="frame">
+
+    <div class="progress" id="progress"></div>
+
+    <button class="nav-btn prev" id="prevBtn" aria-label="Zurück"><i class="fa-solid fa-chevron-left"></i></button>
+    <button class="nav-btn next" id="nextBtn" aria-label="Weiter"><i class="fa-solid fa-chevron-right"></i></button>
+
+    <div class="tap-zone left" id="zoneLeft"></div>
+    <div class="tap-zone right" id="zoneRight"></div>
+
+    <div class="slides" id="slides"></div>
+
+  </div>
+</div>
+
+<script>
+/* ---------------- Daten & Punktelogik ---------------- */
+
+const target = { day: 8, weight: 3760, height: 57 };
+
+const people = [
+  ["Kerstin", 7, 3650, 55],
+  ["Sandra", 4, 3250, 50],
+  ["Uroma", 10, 3025, 55],
+  ["Kathi", 14, 3030, 49],
+  ["Manuela", 9, 3500, 55],
+  ["Jamila", 12, 3500, 50],
+  ["Julian", 7, 2500, 70],
+  ["Holger", 20, 3250, 56],
+  ["Nevio", 10, 400, 45],
+  ["Max", 20, 3600, 51]
+];
+
+function deviation([name, day, weight, height]) {
+  const dateScore = Math.abs(day - target.day) / target.day * 100;
+  const weightScore = Math.abs(weight - target.weight) / target.weight * 100;
+  const heightScore = Math.abs(height - target.height) / target.height * 100;
+  return dateScore + weightScore + heightScore;
+}
+
+const withDeviation = people.map(p => ({ p, dev: deviation(p) }));
+const maxDev = Math.max(...withDeviation.map(x => x.dev));
+
+const ranked = withDeviation
+  .map(({ p, dev }) => ({ p, points: Math.round(100 * (1 - dev / maxDev)) }))
+  .sort((a, b) => b.points - a.points);
+
+const first = ranked[0];
+const second = ranked[1];
+const third = ranked[2];
+const rest = ranked.slice(3);
+
+/* ---------------- Slide-Inhalte ---------------- */
+
+const slidesEl = document.getElementById("slides");
+
+const restRows = rest.map((entry, i) => `
+  <div class="field-row" style="animation-delay:${0.1 + i * 0.07}s">
+    <div class="fr-rank">${i + 4}.</div>
+    <div class="fr-name">${entry.p[0]}</div>
+    <div class="fr-pts">${entry.points} Pkt.</div>
+  </div>
+`).join("");
+
+const recapRows = ranked.map((entry, i) => `
+  <div class="recap-row">
+    <div class="rr-left">
+      <span class="rr-rank">${i + 1}.</span>
+      <span>${entry.p[0]}</span>
+    </div>
+    <div class="rr-pts">${entry.points}</div>
+  </div>
+`).join("");
+
+const slidesData = [
+  // 0 – Intro
+  `<div class="slide s0" data-i="0">
+     <div class="eyebrow">Baby-Party 2026</div>
+     <div class="big-title">LIO<br>WRAPPED</div>
+     <p class="lede">Bevor er da war, habt ihr schon getippt. Zeit, nachzusehen, wer Lio am besten kannte.</p>
+     <div class="tap-hint">Tippen zum Start &nbsp;›</div>
+   </div>`,
+
+  // 1 – Lio's echte Werte
+  `<div class="slide s1" data-i="1">
+     <div class="eyebrow">Das ist wirklich passiert</div>
+     <div class="stat-stack">
+       <div class="stat-row"><i class="fa-solid fa-cake-candles"></i><div class="val">08.09.</div><div class="lab">Geburtstag</div></div>
+       <div class="stat-row"><i class="fa-solid fa-weight-scale"></i><div class="val">3.760 g</div><div class="lab">Gewicht</div></div>
+       <div class="stat-row"><i class="fa-solid fa-ruler-vertical"></i><div class="val">57 cm</div><div class="lab">Größe</div></div>
+     </div>
+   </div>`,
+
+  // 2 – Transition zu den Tipps
+  `<div class="slide s2" data-i="2">
+     <div class="eyebrow">10 Tipps traten an</div>
+     <div class="big-title">Wer lag<br>am nächsten?</div>
+     <p class="lede">Jeder Tipp startete bei 100 Punkten. Jede Abweichung hat gekostet.</p>
+   </div>`,
+
+  // 3 – Restliches Feld
+  `<div class="slide s3" data-i="3">
+     <div class="eyebrow">Platz 4 bis ${ranked.length}</div>
+     <div class="big-title" style="font-size:26px; margin-bottom:18px;">Das Mittelfeld</div>
+     <div class="field-list">${restRows}</div>
+   </div>`,
+
+  // 4 – Platz 3
+  `<div class="slide s4" data-i="4">
+     <div class="eyebrow">Platz 3</div>
+     <div class="medal-badge">🥉</div>
+     <div class="rank-name">${third.p[0]}</div>
+     <div class="rank-points"><b>${third.points}</b> Punkte</div>
+   </div>`,
+
+  // 5 – Platz 2
+  `<div class="slide s5" data-i="5">
+     <div class="eyebrow">Platz 2</div>
+     <div class="medal-badge">🥈</div>
+     <div class="rank-name">${second.p[0]}</div>
+     <div class="rank-points"><b>${second.points}</b> Punkte</div>
+   </div>`,
+
+  // 6 – Platz 1 / Sieger
+  `<div class="slide s6" data-i="6">
+     <div id="confetti"></div>
+     <div class="eyebrow">Und der beste Tipp war...</div>
+     <div class="crown-float"><i class="fa-solid fa-crown"></i></div>
+     <div class="rank-name">${first.p[0]}</div>
+     <div class="rank-points"><b>${first.points}</b> Punkte – Lio-Flüsterer 2026</div>
+   </div>`,
+
+  // 7 – Recap / Bestenliste
+  `<div class="slide s7" data-i="7">
+     <div class="eyebrow">Lio Wrapped</div>
+     <div class="big-title" style="font-size:24px; margin-bottom:16px;">Die volle Bestenliste</div>
+     <div class="recap-card">
+       <div class="recap-title">🏆 Ranking</div>
+       ${recapRows}
+     </div>
+   </div>`,
+
+  // 8 – Live-Alter
+  `<div class="slide s8" data-i="8">
+     <div class="eyebrow">Geboren am 08.09. um 11:11 Uhr</div>
+     <div class="big-title" style="font-size:26px; margin-bottom:20px;">Lio ist jetzt genau...</div>
+     <div class="age-grid" id="ageGrid">
+       <div class="age-cell"><div class="age-val" id="ageYears">0</div><div class="age-lab">Jahre</div></div>
+       <div class="age-cell"><div class="age-val" id="ageMonths">0</div><div class="age-lab">Monate</div></div>
+       <div class="age-cell"><div class="age-val" id="ageDays">0</div><div class="age-lab">Tage</div></div>
+       <div class="age-cell"><div class="age-val" id="ageHours">0</div><div class="age-lab">Stunden</div></div>
+       <div class="age-cell"><div class="age-val" id="ageMinutes">0</div><div class="age-lab">Minuten</div></div>
+       <div class="age-cell"><div class="age-val" id="ageSeconds">0</div><div class="age-lab">Sekunden</div></div>
+     </div>
+     <button class="replay-btn" id="replayBtn"><i class="fa-solid fa-rotate-right"></i> Nochmal ansehen</button>
+   </div>`
+];
+
+slidesEl.innerHTML = slidesData.join("");
+
+/* ---------------- Navigation ---------------- */
+
+const slideEls = Array.from(document.querySelectorAll(".slide"));
+const progressEl = document.getElementById("progress");
+let current = 0;
+
+progressEl.innerHTML = slideEls.map(() => `<div class="seg"><i></i></div>`).join("");
+const segs = Array.from(progressEl.children);
+
+function render() {
+  slideEls.forEach((el, i) => el.classList.toggle("active", i === current));
+  segs.forEach((seg, i) => seg.classList.toggle("done", i < current));
+  segs.forEach((seg, i) => seg.querySelector("i").style.width = i < current ? "100%" : (i === current ? "100%" : "0%"));
+
+  if (current === 6) launchConfetti();
+}
+
+function next() {
+  if (current < slideEls.length - 1) { current++; render(); }
+}
+function prev() {
+  if (current > 0) { current--; render(); }
+}
+
+document.getElementById("zoneRight").addEventListener("click", next);
+document.getElementById("zoneLeft").addEventListener("click", prev);
+document.getElementById("nextBtn").addEventListener("click", next);
+document.getElementById("prevBtn").addEventListener("click", prev);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight" || e.key === " ") next();
+  if (e.key === "ArrowLeft") prev();
+});
+
+// Swipe
+let touchStartX = null;
+document.addEventListener("touchstart", (e) => { touchStartX = e.touches[0].clientX; }, { passive:true });
+document.addEventListener("touchend", (e) => {
+  if (touchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (dx > 50) prev();
+  else if (dx < -50) next();
+  touchStartX = null;
+}, { passive:true });
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#replayBtn")) {
+    current = 0;
+    render();
+  }
+});
+
+/* ---------------- Konfetti ---------------- */
+
+const confettiColors = ["#FFD23F", "#FF3E7F", "#2CE6B0", "#3E8EFF", "#FF7A3D"];
+let confettiLaunched = false;
+
+function launchConfetti() {
+  if (confettiLaunched) return;
+  confettiLaunched = true;
+  const wrap = document.querySelector(".s6 #confetti");
+  if (!wrap) return;
+  for (let i = 0; i < 50; i++) {
+    const el = document.createElement("div");
+    el.className = "confetto";
+    const size = 5 + Math.random() * 5;
+    el.style.width = size + "px";
+    el.style.height = size * 0.4 + "px";
+    el.style.left = Math.random() * 100 + "%";
+    el.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+    el.style.animationDuration = (2.2 + Math.random() * 1.6) + "s";
+    el.style.animationDelay = (Math.random() * 0.5) + "s";
+    wrap.appendChild(el);
+  }
+}
+
+render();
+
+const birthDate = new Date(2026, 8, 8, 11, 11, 0); // 8. September 2026, 11:11 Uhr
+
+function updateAge() {
+  const now = new Date();
+  let years = now.getFullYear() - birthDate.getFullYear();
+  let months = now.getMonth() - birthDate.getMonth();
+  let days = now.getDate() - birthDate.getDate();
+  let hours = now.getHours() - birthDate.getHours();
+  let minutes = now.getMinutes() - birthDate.getMinutes();
+  let seconds = now.getSeconds() - birthDate.getSeconds();
+
+  if (seconds < 0) { seconds += 60; minutes--; }
+  if (minutes < 0) { minutes += 60; hours--; }
+  if (hours < 0) { hours += 24; days--; }
+  if (days < 0) {
+    months--;
+    const prevMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    days += prevMonthLastDay;
+  }
+  if (months < 0) { months += 12; years--; }
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = Math.max(0, val);
+  };
+
+  setVal("ageYears", years);
+  setVal("ageMonths", months);
+  setVal("ageDays", days);
+  setVal("ageHours", hours);
+  setVal("ageMinutes", minutes);
+  setVal("ageSeconds", seconds);
+}
+
+updateAge();
+setInterval(updateAge, 1000);
+
+</script>
+</body>
+</html>
