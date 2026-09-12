@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Lio Wrapped – Baby-Party Auswertung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --ink:#0C0A14;
+    --paper:#FFF8EE;
+    --violet:#6C4CE0;
+    --violet-deep:#3A1F8F;
+    --pink:#FF3E7F;
+    --orange:#FF7A3D;
+    --yellow:#FFD23F;
+    --mint:#2CE6B0;
+    --blue:#3E8EFF;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    color:var(--paper);
+    overscroll-behavior:none;
+  }
+
+  .stage{
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .frame{
+    position:relative;
+    width:100%;
+    max-width:480px;
+    height:100%;
+    max-height:900px;
+    background:var(--ink);
+    overflow:hidden;
+    box-shadow:0 0 60px #00000080;
+  }
+
+  @media(min-width:520px){
+    .frame{ border-radius:28px; margin:16px 0; height:calc(100% - 32px); }
+  }
+
+  /* ---------- Top bar: progress + controls ---------- */
+
+  .topbar{
+    position:absolute;
+    top:0; left:0; right:0;
+    z-index:30;
+    padding:14px 14px 0;
+  }
+
+  .progress{ display:flex; gap:5px; }
+
+  .progress .seg{
+    flex:1;
+    height:3px;
+    background:#ffffff30;
+    border-radius:99px;
+    overflow:hidden;
+  }
+
+  .progress .seg i{
+    display:block;
+    height:100%;
+    width:0%;
+    background:#fff;
+    border-radius:99px;
+  }
+  .progress .seg.done i{ width:100%; }
+  .progress .seg.filling i{ width:100%; transition:width linear; }
+
+  .toprow{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:10px;
+  }
+
+  .icon-btn{
+    width:32px; height:32px;
+    border-radius:50%;
+    border:none;
+    background:#ffffff20;
+    color:#fff;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+
+  /* ---------- Tap zones ---------- */
+
+  .tap-zone{ position:absolute; top:0; bottom:0; width:38%; z-index:20; }
+  .tap-zone.left{ left:0; }
+  .tap-zone.right{ right:0; }
+
+  .nav-btn{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:25;
+    width:38px; height:38px;
+    border-radius:50%;
+    border:none;
+    background:#ffffff1f;
+    color:#fff;
+    font-size:14px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    backdrop-filter:blur(6px);
+  }
+  .nav-btn.prev{ left:10px; }
+  .nav-btn.next{ right:10px; }
+  @media(hover:hover){ .nav-btn{ display:flex; } }
+
+  /* ---------- Slides ---------- */
+
+  .slides{ position:relative; width:100%; height:100%; }
+
+  .slide{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:70px 30px 50px;
+    opacity:0;
+    visibility:hidden;
+    transform:scale(1.04);
+    transition:opacity .35s ease, transform .35s ease;
+    overflow:hidden;
+  }
+
+  .slide.active{ opacity:1; visibility:visible; transform:scale(1); z-index:1; }
+
+  .slide::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-1;
+    opacity:.55;
+    background-image:
+      radial-gradient(circle at 20% 15%, #ffffff22, transparent 45%),
+      radial-gradient(circle at 85% 90%, #00000040, transparent 50%);
+  }
+
+  .s0{ background:radial-gradient(circle at 50% 20%, var(--violet), var(--violet-deep) 70%); }
+  .s1{ background:linear-gradient(160deg, var(--pink), var(--violet-deep)); }
+  .s2{ background:linear-gradient(160deg, #4A2FB8, #1A0F3D); }
+  .s3{ background:linear-gradient(160deg, var(--orange), #7A1F5C); }
+  .s4{ background:linear-gradient(160deg, var(--blue), var(--violet-deep)); }
+  .s5{ background:linear-gradient(160deg, #5C5C6E, #22222E); }
+  .s6{ background:linear-gradient(160deg, #C97A2B, #4A1A5E); }
+  .s7{ background:linear-gradient(160deg, #B8B8B8, #3A3A4A); }
+  .s8{ background:linear-gradient(160deg, var(--yellow), #7A3D9C); }
+  .s9{ background:radial-gradient(circle at 50% 15%, var(--mint), #16324A 75%); }
+  .s10{ background:linear-gradient(160deg, #FF7A3D, #2B1A4A); }
+  .s11{ background:linear-gradient(160deg, var(--violet), #1A0F3D 75%); }
+  .s12{ background:linear-gradient(160deg, var(--pink), var(--orange) 85%); }
+  .s13{ background:linear-gradient(160deg, #14493D, var(--mint) 130%); }
+  .s14{ background:radial-gradient(circle at 50% 18%, var(--yellow), var(--orange) 70%); }
+
+  /* Floating decorative icons */
+  .float-icon{
+    position:absolute;
+    opacity:.18;
+    font-size:22px;
+    animation:floaty 6s ease-in-out infinite;
+    z-index:0;
+  }
+  @keyframes floaty{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-14px) rotate(8deg); }
+  }
+
+  .eyebrow{
+    font-size:13px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-weight:600;
+    opacity:.85;
+    margin-bottom:14px;
+  }
+
+  .big-title{
+    font-family:'Archivo Black', sans-serif;
+    font-size:clamp(34px, 10vw, 52px);
+    line-height:1.02;
+    margin:0 0 14px;
+    text-shadow:0 2px 0 #00000020;
+  }
+
+  .lede{ font-size:16px; opacity:.9; max-width:300px; margin:0 auto; }
+
+  .tap-hint{
+    position:absolute;
+    bottom:26px; left:0; right:0;
+    text-align:center;
+    font-size:12.5px;
+    opacity:.65;
+    letter-spacing:.04em;
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ opacity:.4; } 50%{ opacity:.85; } }
+
+  /* ---------- Stat stack ---------- */
+
+  .stat-stack{ display:flex; flex-direction:column; gap:22px; width:100%; }
+  .stat-row{ opacity:0; transform:translateY(16px); }
+  .slide.active .stat-row{ animation:popIn .55s cubic-bezier(.2,.9,.3,1.2) forwards; }
+  .slide.active .stat-row:nth-child(1){ animation-delay:.15s; }
+  .slide.active .stat-row:nth-child(2){ animation-delay:.4s; }
+  .slide.active .stat-row:nth-child(3){ animation-delay:.65s; }
+  @keyframes popIn{ to{ opacity:1; transform:translateY(0); } }
+  .stat-row i{ font-size:15px; opacity:.75; margin-bottom:6px; display:block; }
+  .stat-row .val{ font-family:'Archivo Black', sans-serif; font-size:clamp(30px,9vw,42px); line-height:1; }
+  .stat-row .lab{ font-size:12.5px; text-transform:uppercase; letter-spacing:.1em; opacity:.75; margin-top:6px; }
+
+  /* ---------- Sternzeichen ---------- */
+
+  .zodiac-symbol{
+    font-size:64px;
+    margin-bottom:10px;
+    animation:popIn .6s cubic-bezier(.2,.9,.3,1.2) .1s both;
+  }
+
+  /* ---------- Field list ---------- */
+
+  .field-list{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:56vh;
+    overflow-y:auto;
+    padding:2px 2px 4px;
+  }
+  .field-row{
+    display:flex; align-items:center; gap:12px;
+    background:#ffffff16;
+    border-radius:12px;
+    padding:10px 14px;
+    text-align:left;
+    opacity:0;
+    transform:translateX(-12px);
+  }
+  .slide.active .field-row{ animation:slideRow .45s ease forwards; }
+  @keyframes slideRow{ to{ opacity:1; transform:translateX(0); } }
+  .field-row .fr-rank{ font-family:'Archivo Black', sans-serif; font-size:15px; width:24px; opacity:.8; }
+  .field-row .fr-name{ flex:1; font-weight:600; font-size:14.5px; }
+  .field-row .fr-pts{ font-weight:700; font-size:14.5px; font-variant-numeric:tabular-nums; }
+
+  /* ---------- Podium reveal ---------- */
+
+  .medal-badge{
+    width:76px; height:76px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:30px;
+    margin-bottom:20px;
+    background:#ffffff26;
+    box-shadow:0 0 0 4px #ffffff30;
+    animation:badgeIn .6s cubic-bezier(.2,.9,.3,1.3) .1s both;
+  }
+  @keyframes badgeIn{ from{ opacity:0; transform:scale(.3) rotate(-15deg); } to{ opacity:1; transform:scale(1) rotate(0); } }
+
+  .rank-name{
+    font-family:'Archivo Black', sans-serif;
+    font-size:clamp(30px,9vw,44px);
+    margin:6px 0 4px;
+    opacity:0;
+    animation:popIn .5s ease .3s forwards;
+  }
+  .rank-points{ font-size:16px; opacity:0; animation:popIn .5s ease .5s forwards; }
+  .rank-points b{ font-size:22px; }
+  .rank-caption{
+    font-size:13px;
+    opacity:0;
+    max-width:260px;
+    margin-top:10px;
+    animation:popIn .5s ease .65s forwards;
+    color:#ffffffcc;
+  }
+
+  .crown-float{
+    font-size:40px;
+    color:#3A2A00;
+    margin-bottom:6px;
+    animation:crownDrop .7s cubic-bezier(.2,.8,.3,1.4) both, bob 2.2s ease-in-out 1s infinite;
+  }
+  @keyframes crownDrop{ from{ opacity:0; transform:translateY(-40px) scale(.6); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-5px); } }
+
+  #confetti{ position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:5; }
+  .confetto{ position:absolute; top:-16px; border-radius:2px; opacity:0; animation:fall linear forwards; }
+  @keyframes fall{
+    0%{ opacity:0; transform:translateY(0) rotate(0deg); }
+    8%{ opacity:1; }
+    100%{ opacity:0; transform:translateY(115%) rotate(360deg); }
+  }
+
+  /* ---------- Recap ---------- */
+
+  .recap-card{
+    background:#00000030;
+    border:1px solid #ffffff30;
+    border-radius:20px;
+    padding:18px 16px;
+    width:100%;
+    backdrop-filter:blur(4px);
+  }
+  .recap-title{ font-family:'Archivo Black', sans-serif; font-size:20px; margin-bottom:12px; }
+  .recap-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:7px 4px; font-size:14px; border-bottom:1px solid #ffffff20;
+  }
+  .recap-row:last-child{ border-bottom:none; }
+  .recap-row .rr-left{ display:flex; align-items:center; gap:8px; text-align:left; }
+  .recap-row .rr-rank{ width:18px; font-weight:700; opacity:.8; font-size:13px; }
+  .recap-row .rr-pts{ font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .action-btn{
+    margin-top:18px;
+    border:1.5px solid #ffffff70;
+    background:#ffffff18;
+    color:#fff;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:11px 22px;
+    border-radius:99px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+  }
+
+  .toast{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%) translateY(10px);
+    background:#000000c0;
+    color:#fff;
+    font-size:13px;
+    padding:9px 16px;
+    border-radius:99px;
+    opacity:0;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:40;
+    pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---------- Fun facts ---------- */
+
+  .fact-grid{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    width:100%;
+  }
+  .fact-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:#ffffff16;
+    border-radius:14px;
+    padding:12px 16px;
+    text-align:left;
+    opacity:0;
+    transform:translateY(10px);
+  }
+  .slide.active .fact-row{ animation:popIn .5s ease forwards; }
+  .slide.active .fact-row:nth-child(1){ animation-delay:.1s; }
+  .slide.active .fact-row:nth-child(2){ animation-delay:.22s; }
+  .slide.active .fact-row:nth-child(3){ animation-delay:.34s; }
+  .fact-row i{ font-size:20px; width:24px; opacity:.9; }
+  .fact-row .fact-num{ font-family:'Archivo Black', sans-serif; font-size:20px; }
+  .fact-row .fact-lab{ font-size:12px; opacity:.75; }
+  .fact-note{ margin-top:14px; font-size:11.5px; opacity:.6; max-width:280px; }
+
+  /* ---------- Age grid ---------- */
+
+  .age-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; width:100%; }
+  .age-cell{ background:#ffffff16; border-radius:14px; padding:14px 6px; opacity:0; transform:translateY(10px); }
+  .slide.active .age-cell{ animation:popIn .5s ease forwards; }
+  .slide.active .age-cell:nth-child(1){ animation-delay:.08s; }
+  .slide.active .age-cell:nth-child(2){ animation-delay:.16s; }
+  .slide.active .age-cell:nth-child(3){ animation-delay:.24s; }
+  .slide.active .age-cell:nth-child(4){ animation-delay:.32s; }
+  .slide.active .age-cell:nth-child(5){ animation-delay:.4s; }
+  .slide.active .age-cell:nth-child(6){ animation-delay:.48s; }
+  .age-val{ font-family:'Archivo Black', sans-serif; font-size:clamp(24px, 7vw, 32px); font-variant-numeric:tabular-nums; line-height:1; }
+  .age-lab{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; opacity:.75; margin-top:6px; }
+
+  .watermark{
+    margin-top:22px;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    opacity:.5;
+  }
+
+  /* ---------- Mutigster Tipp ---------- */
+
+  .bold-badge{
+    width:80px; height:80px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:32px;
+    margin-bottom:18px;
+    background:#ffffff26;
+    box-shadow:0 0 0 4px #ffffff30;
+    animation:badgeIn .6s cubic-bezier(.2,.9,.3,1.3) .1s both;
+  }
+  .bold-value{
+    font-family:'Archivo Black', sans-serif;
+    font-size:clamp(30px,9vw,42px);
+    margin:4px 0 2px;
+    opacity:0;
+    animation:popIn .5s ease .3s forwards;
+  }
+  .bold-sub{
+    font-size:14px;
+    opacity:0;
+    animation:popIn .5s ease .48s forwards;
+  }
+  .bold-caption{
+    font-size:13px;
+    opacity:0;
+    max-width:270px;
+    margin-top:14px;
+    animation:popIn .5s ease .65s forwards;
+    color:#ffffffcc;
+  }
+
+  /* ---------- Ring-Diagramm ---------- */
+
+  .ring-wrap{ position:relative; width:200px; height:200px; margin:0 auto 8px; }
+  .ring-svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-bg{ fill:none; stroke:#ffffff26; stroke-width:14; }
+  .ring-fg{
+    fill:none;
+    stroke:#fff;
+    stroke-width:14;
+    stroke-linecap:round;
+    stroke-dasharray:565;
+    stroke-dashoffset:565;
+    transition:none;
+  }
+  .slide.active .ring-fg{ stroke-dashoffset:var(--ring-target, 565); transition:stroke-dashoffset 1.3s cubic-bezier(.22,.8,.2,1) .25s; }
+  .ring-center{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-pct{ font-family:'Archivo Black', sans-serif; font-size:clamp(30px,9vw,40px); }
+  .ring-pct-lab{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; opacity:.8; margin-top:2px; }
+
+  /* ---------- Danke-Folie ---------- */
+
+  .thanks-grid{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+    max-width:320px;
+    margin:6px 0 4px;
+  }
+  .thanks-chip{
+    display:flex; align-items:center; gap:6px;
+    background:#ffffff1c;
+    border:1px solid #ffffff2c;
+    border-radius:99px;
+    padding:7px 13px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    transform:translateY(8px) scale(.9);
+  }
+  .slide.active .thanks-chip{ animation:popIn .45s cubic-bezier(.2,.9,.3,1.2) forwards; }
+  .thanks-chip i{ font-size:11px; opacity:.85; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+    .slide{ opacity:1 !important; visibility:visible !important; transform:none !important; position:relative !important; }
+    .slides{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="frame">
+
+    <div class="topbar">
+      <div class="progress" id="progress"></div>
+      <div class="toprow">
+        <button class="icon-btn" id="soundBtn" aria-label="Ton" style="margin-right:8px;"><i class="fa-solid fa-volume-high"></i></button>
+        <button class="icon-btn" id="autoplayBtn" aria-label="Autoplay"><i class="fa-solid fa-play"></i></button>
+      </div>
+    </div>
+
+    <button class="nav-btn prev" id="prevBtn" aria-label="Zurück"><i class="fa-solid fa-chevron-left"></i></button>
+    <button class="nav-btn next" id="nextBtn" aria-label="Weiter"><i class="fa-solid fa-chevron-right"></i></button>
+
+    <div class="tap-zone left" id="zoneLeft"></div>
+    <div class="tap-zone right" id="zoneRight"></div>
+
+    <div class="slides" id="slides"></div>
+    <div class="toast" id="toast"></div>
+
+  </div>
+</div>
+
+<script>
+/* ---------------- Daten & Punktelogik ---------------- */
+
+const target = { day: 8, weight: 3760, height: 57 };
+
+const people = [
+  ["Kerstin", 7, 3650, 55],
+  ["Sandra", 4, 3250, 50],
+  ["Uroma", 10, 3025, 55],
+  ["Kathi", 14, 3030, 49],
+  ["Manuela", 9, 3500, 55],
+  ["Jamila", 12, 3500, 50],
+  ["Julian", 7, 2500, 70],
+  ["Holger", 20, 3250, 56],
+  ["Nevio", 10, 400, 45],
+  ["Max", 20, 3600, 51]
+];
+
+function deviation([name, day, weight, height]) {
+  const dateScore = Math.abs(day - target.day) / target.day * 100;
+  const weightScore = Math.abs(weight - target.weight) / target.weight * 100;
+  const heightScore = Math.abs(height - target.height) / target.height * 100;
+  return dateScore + weightScore + heightScore;
+}
+
+const withDeviation = people.map(p => ({ p, dev: deviation(p) }));
+const maxDev = Math.max(...withDeviation.map(x => x.dev));
+
+const ranked = withDeviation
+  .map(({ p, dev }) => ({ p, points: Math.round(100 * (1 - dev / maxDev)) }))
+  .sort((a, b) => b.points - a.points);
+
+const first = ranked[0];
+const second = ranked[1];
+const third = ranked[2];
+const last = ranked[ranked.length - 1];
+const midField = ranked.slice(3, ranked.length - 1);
+
+/* ---------------- Mutigster Tipp ---------------- */
+
+const fieldMeta = {
+  day:    { icon: "fa-calendar-day",    label: "beim Geburtstermin", unit: "Tage",  fmt: v => Math.abs(v) },
+  weight: { icon: "fa-weight-scale",    label: "beim Gewicht",       unit: "g",     fmt: v => Math.abs(v).toLocaleString("de-DE") },
+  height: { icon: "fa-ruler-vertical",  label: "bei der Größe",      unit: "cm",    fmt: v => Math.abs(v) }
+};
+const directionText = {
+  day:    v => v > 0 ? "zu spät" : "zu früh",
+  weight: v => v > 0 ? "zu schwer" : "zu leicht",
+  height: v => v > 0 ? "zu groß" : "zu klein"
+};
+
+const boldGuesses = [];
+people.forEach(([name, day, weight, height]) => {
+  boldGuesses.push({ name, field: "day",    diff: day - target.day,       score: Math.abs(day - target.day) / target.day * 100 });
+  boldGuesses.push({ name, field: "weight", diff: weight - target.weight, score: Math.abs(weight - target.weight) / target.weight * 100 });
+  boldGuesses.push({ name, field: "height", diff: height - target.height, score: Math.abs(height - target.height) / target.height * 100 });
+});
+const boldest = boldGuesses.sort((a, b) => b.score - a.score)[0];
+const boldestMeta = fieldMeta[boldest.field];
+const boldestValueText = `${boldestMeta.fmt(boldest.diff)} ${boldestMeta.unit}`;
+const boldestDirectionText = directionText[boldest.field](boldest.diff);
+
+/* ---------------- Tipp-Statistiken ---------------- */
+
+const avgDateDev = people.reduce((sum, [, day]) => sum + Math.abs(day - target.day), 0) / people.length;
+const avgWeightDev = people.reduce((sum, [, , weight]) => sum + Math.abs(weight - target.weight), 0) / people.length;
+const avgHeightDev = people.reduce((sum, [, , , height]) => sum + Math.abs(height - target.height), 0) / people.length;
+
+const maxWeightDevEntry = people.reduce((worst, p) => {
+  const dev = Math.abs(p[2] - target.weight);
+  return dev > worst.dev ? { name: p[0], dev } : worst;
+}, { name: "", dev: -1 });
+
+const closestDateEntry = people.reduce((best, p) => {
+  const dev = Math.abs(p[1] - target.day);
+  return dev < best.dev ? { name: p[0], dev } : best;
+}, { name: "", dev: Infinity });
+
+/* ---------------- Ring-Diagramm (bester Tipp) ---------------- */
+
+const RING_CIRCUMFERENCE = 565;
+const ringOffset = Math.round(RING_CIRCUMFERENCE * (1 - first.points / 100));
+
+/* ---------------- Slide-Inhalte ---------------- */
+
+const slidesEl = document.getElementById("slides");
+
+const midRows = midField.map((entry, i) => `
+  <div class="field-row" style="animation-delay:${0.1 + i * 0.07}s">
+    <div class="fr-rank">${i + 4}.</div>
+    <div class="fr-name">${entry.p[0]}</div>
+    <div class="fr-pts">${entry.points} Pkt.</div>
+  </div>
+`).join("");
+
+const recapRows = ranked.map((entry, i) => `
+  <div class="recap-row">
+    <div class="rr-left"><span class="rr-rank">${i + 1}.</span><span>${entry.p[0]}</span></div>
+    <div class="rr-pts">${entry.points}</div>
+  </div>
+`).join("");
+
+const slidesData = [
+  // 0 – Intro
+  `<div class="slide s0" data-i="0">
+     <i class="fa-solid fa-star float-icon" style="top:14%; left:12%;"></i>
+     <i class="fa-solid fa-bottle-baby float-icon" style="bottom:18%; right:14%; animation-delay:1.2s;"></i>
+     <i class="fa-solid fa-moon float-icon" style="top:22%; right:18%; animation-delay:2.4s;"></i>
+     <div class="eyebrow">Baby-Party 2026</div>
+     <div class="big-title">LIO<br>WRAPPED</div>
+     <p class="lede">Bevor er da war, habt ihr schon getippt. Zeit, nachzusehen, wer Lio am besten kannte.</p>
+     <div class="tap-hint">Tippen zum Start &nbsp;›</div>
+   </div>`,
+
+  // 1 – Lio's echte Werte
+  `<div class="slide s1" data-i="1">
+     <div class="eyebrow">Das ist wirklich passiert</div>
+     <div class="stat-stack">
+       <div class="stat-row"><i class="fa-solid fa-cake-candles"></i><div class="val">08.09.</div><div class="lab">Geburtstag</div></div>
+       <div class="stat-row"><i class="fa-solid fa-weight-scale"></i><div class="val">3.760 g</div><div class="lab">Gewicht</div></div>
+       <div class="stat-row"><i class="fa-solid fa-ruler-vertical"></i><div class="val">57 cm</div><div class="lab">Größe</div></div>
+     </div>
+   </div>`,
+
+  // 2 – Sternzeichen
+  `<div class="slide s2" data-i="2">
+     <i class="fa-solid fa-sparkles float-icon" style="top:16%; left:16%;"></i>
+     <i class="fa-solid fa-sparkles float-icon" style="bottom:20%; right:16%; animation-delay:1.6s;"></i>
+     <div class="eyebrow">Passend zum Datum</div>
+     <div class="zodiac-symbol">♍</div>
+     <div class="big-title" style="font-size:32px;">Jungfrau</div>
+     <p class="lede">Bodenständig, aufmerksam und schon jetzt mit Sinn fürs Detail – zumindest sagt das die Sternzeichen-Kunde.</p>
+   </div>`,
+
+  // 3 – Transition zu den Tipps
+  `<div class="slide s3" data-i="3">
+     <div class="eyebrow">10 Tipps traten an</div>
+     <div class="big-title">Wer lag<br>am nächsten?</div>
+     <p class="lede">Jeder Tipp startete bei 100 Punkten. Jede Abweichung hat gekostet.</p>
+   </div>`,
+
+  // 4 – Mittelfeld
+  `<div class="slide s4" data-i="4">
+     <div class="eyebrow">Platz 4 bis ${ranked.length - 1}</div>
+     <div class="big-title" style="font-size:26px; margin-bottom:18px;">Das Mittelfeld</div>
+     <div class="field-list">${midRows}</div>
+   </div>`,
+
+  // 5 – Rote Laterne
+  `<div class="slide s5" data-i="5">
+     <div class="eyebrow">Die Rote Laterne (mit Liebe)</div>
+     <div class="medal-badge"><i class="fa-solid fa-heart"></i></div>
+     <div class="rank-name">${last.p[0]}</div>
+     <div class="rank-points"><b>${last.points}</b> Punkte</div>
+     <div class="rank-caption">Nicht jeder Tipp kann ins Schwarze treffen – Hauptsache dabei gewesen!</div>
+   </div>`,
+
+  // 6 – Platz 3
+  `<div class="slide s6" data-i="6">
+     <div class="eyebrow">Platz 3</div>
+     <div class="medal-badge">🥉</div>
+     <div class="rank-name">${third.p[0]}</div>
+     <div class="rank-points"><b>${third.points}</b> Punkte</div>
+   </div>`,
+
+  // 7 – Platz 2
+  `<div class="slide s7" data-i="7">
+     <div class="eyebrow">Platz 2</div>
+     <div class="medal-badge">🥈</div>
+     <div class="rank-name">${second.p[0]}</div>
+     <div class="rank-points"><b>${second.points}</b> Punkte</div>
+   </div>`,
+
+  // 8 – Platz 1 / Sieger
+  `<div class="slide s8" data-i="8">
+     <div id="confetti"></div>
+     <div class="eyebrow">Und der beste Tipp war...</div>
+     <div class="crown-float"><i class="fa-solid fa-crown"></i></div>
+     <div class="rank-name">${first.p[0]}</div>
+     <div class="rank-points"><b>${first.points}</b> Punkte – Lio-Flüsterer 2026</div>
+   </div>`,
+
+  // 9 – Wer tippte am mutigsten?
+  `<div class="slide s12" data-i="9">
+     <div class="eyebrow">Wer tippte am mutigsten?</div>
+     <div class="bold-badge"><i class="fa-solid ${boldestMeta.icon}"></i></div>
+     <div class="bold-value">${boldest.name}</div>
+     <div class="bold-sub">lag ${boldestValueText} ${boldestDirectionText}</div>
+     <div class="bold-caption">Größte Einzelabweichung des Abends ${boldestMeta.label} – Respekt für den Mut zur eigenen Meinung! 🎉</div>
+   </div>`,
+
+  // 10 – Perfekter Tipp-Vergleich
+  `<div class="slide s13" data-i="10">
+     <div class="eyebrow">Perfekter Tipp-Vergleich</div>
+     <div class="big-title" style="font-size:24px; margin-bottom:6px;">Wie nah dran?</div>
+     <div class="ring-wrap">
+       <svg class="ring-svg" viewBox="0 0 200 200">
+         <circle class="ring-bg" cx="100" cy="100" r="90"></circle>
+         <circle class="ring-fg" cx="100" cy="100" r="90" style="--ring-target:${ringOffset}"></circle>
+       </svg>
+       <div class="ring-center">
+         <div class="ring-pct">${first.points}%</div>
+         <div class="ring-pct-lab">Treffer­genauigkeit</div>
+       </div>
+     </div>
+     <p class="lede" style="margin-top:10px;"><b>${first.p[0]}s</b> Tipp war am dichtesten an der Realität dran – von 100 möglichen Punkten blieben nur ${100 - first.points} liegen.</p>
+   </div>`,
+
+  // 11 – Recap / Bestenliste
+  `<div class="slide s9" data-i="11">
+     <div class="eyebrow">Lio Wrapped</div>
+     <div class="big-title" style="font-size:24px; margin-bottom:16px;">Die volle Bestenliste</div>
+     <div class="recap-card">
+       <div class="recap-title">🏆 Ranking</div>
+       ${recapRows}
+     </div>
+     <button class="action-btn" id="shareBtn"><i class="fa-solid fa-share-nodes"></i> Ergebnisse teilen</button>
+   </div>`,
+
+  // 12 – Tipp-Statistiken
+  `<div class="slide s10" data-i="12">
+     <div class="eyebrow">Ausgewertet</div>
+     <div class="big-title" style="font-size:26px; margin-bottom:18px;">Tipp-Statistiken</div>
+     <div class="fact-grid">
+       <div class="fact-row"><i class="fa-solid fa-calendar-day"></i><div><div class="fact-num">${avgDateDev.toFixed(1)} Tage</div><div class="fact-lab">durchschnittlicher Tipp lag beim Termin daneben</div></div></div>
+       <div class="fact-row"><i class="fa-solid fa-weight-scale"></i><div><div class="fact-num">${Math.round(avgWeightDev).toLocaleString("de-DE")} g</div><div class="fact-lab">durchschnittliche Abweichung beim Gewicht</div></div></div>
+       <div class="fact-row"><i class="fa-solid fa-ruler-vertical"></i><div><div class="fact-num">${avgHeightDev.toFixed(1)} cm</div><div class="fact-lab">durchschnittliche Abweichung bei der Größe</div></div></div>
+       <div class="fact-row"><i class="fa-solid fa-bullseye"></i><div><div class="fact-num">${closestDateEntry.dev} Tag(e)</div><div class="fact-lab">nächster Termin-Tipp, von ${closestDateEntry.name}</div></div></div>
+     </div>
+     <div class="fact-note">Größte Gewichtsabweichung des Abends: ${maxWeightDevEntry.dev.toLocaleString("de-DE")} g (${maxWeightDevEntry.name}). Echte Zahlen, keine Schätzungen.</div>
+   </div>`,
+
+  // 13 – Live-Alter
+  `<div class="slide s11" data-i="13">
+     <div class="eyebrow">Geboren am 08.09. um 11:11 Uhr</div>
+     <div class="big-title" style="font-size:26px; margin-bottom:20px;">Lio ist jetzt genau...</div>
+     <div class="age-grid" id="ageGrid">
+       <div class="age-cell"><div class="age-val" id="ageYears">0</div><div class="age-lab">Jahre</div></div>
+       <div class="age-cell"><div class="age-val" id="ageMonths">0</div><div class="age-lab">Monate</div></div>
+       <div class="age-cell"><div class="age-val" id="ageDays">0</div><div class="age-lab">Tage</div></div>
+       <div class="age-cell"><div class="age-val" id="ageHours">0</div><div class="age-lab">Stunden</div></div>
+       <div class="age-cell"><div class="age-val" id="ageMinutes">0</div><div class="age-lab">Minuten</div></div>
+       <div class="age-cell"><div class="age-val" id="ageSeconds">0</div><div class="age-lab">Sekunden</div></div>
+     </div>
+   </div>`,
+
+  // 14 – Danke fürs Mitraten
+  `<div class="slide s14" data-i="14">
+     <i class="fa-solid fa-star float-icon" style="top:12%; left:14%;"></i>
+     <i class="fa-solid fa-heart float-icon" style="bottom:16%; right:14%; animation-delay:1.4s;"></i>
+     <div class="eyebrow">Ein großes Dankeschön</div>
+     <div class="big-title" style="font-size:30px; margin-bottom:12px;">Danke fürs<br>Mitraten!</div>
+     <p class="lede" style="margin-bottom:16px;">10 Tipps, 10 Perspektiven auf Lio – jede und jeder Einzelne hat diese Auswertung erst möglich gemacht.</p>
+     <div class="thanks-grid">
+       ${people.map(([name], i) => `<div class="thanks-chip" style="animation-delay:${0.08 + i * 0.05}s"><i class="fa-solid fa-heart"></i><span>${name}</span></div>`).join("")}
+     </div>
+     <button class="action-btn" id="replayBtn"><i class="fa-solid fa-rotate-right"></i> Nochmal ansehen</button>
+     <div class="watermark">Lio Wrapped · 2026</div>
+   </div>`
+];
+
+slidesEl.innerHTML = slidesData.join("");
+
+/* ---------------- Navigation ---------------- */
+
+const slideEls = Array.from(document.querySelectorAll(".slide"));
+const progressEl = document.getElementById("progress");
+let current = 0;
+let autoplayEnabled = false;
+let autoplayTimer = null;
+const AUTOPLAY_MS = 4200;
+
+progressEl.innerHTML = slideEls.map(() => `<div class="seg"><i></i></div>`).join("");
+const segs = Array.from(progressEl.children);
+
+function clearSegFill(seg) {
+  seg.classList.remove("filling");
+  const bar = seg.querySelector("i");
+  bar.style.transition = "none";
+  bar.style.width = "0%";
+}
+
+function startSegFill(seg) {
+  const bar = seg.querySelector("i");
+  bar.style.transition = "none";
+  bar.style.width = "0%";
+  seg.classList.add("filling");
+  requestAnimationFrame(() => {
+    bar.style.transition = `width ${AUTOPLAY_MS}ms linear`;
+    bar.style.width = "100%";
+  });
+}
+
+function render() {
+  slideEls.forEach((el, i) => el.classList.toggle("active", i === current));
+  segs.forEach((seg, i) => {
+    seg.classList.toggle("done", i < current);
+    if (i < current) {
+      seg.classList.remove("filling");
+      seg.querySelector("i").style.transition = "none";
+      seg.querySelector("i").style.width = "100%";
+    } else if (i > current) {
+      clearSegFill(seg);
+    }
+  });
+
+  if (autoplayEnabled && current < slideEls.length - 1) {
+    startSegFill(segs[current]);
+  } else {
+    clearSegFill(segs[current]);
+  }
+
+  if (current === 8) { launchConfetti(); playFanfare(); triggerHaptic(); }
+
+  restartAutoplayTimer();
+}
+
+function next() {
+  if (current < slideEls.length - 1) {
+    ensureAudio(); startAmbient(); playWhoosh();
+    current++; render();
+  } else stopAutoplay();
+}
+function prev() {
+  if (current > 0) {
+    ensureAudio(); startAmbient(); playWhoosh();
+    current--; render();
+  }
+}
+
+function stopAutoplay() {
+  autoplayEnabled = false;
+  if (autoplayTimer) clearTimeout(autoplayTimer);
+  document.getElementById("autoplayBtn").innerHTML = '<i class="fa-solid fa-play"></i>';
+  segs.forEach(clearSegFill);
+}
+
+function restartAutoplayTimer() {
+  if (autoplayTimer) clearTimeout(autoplayTimer);
+  if (autoplayEnabled && current < slideEls.length - 1) {
+    autoplayTimer = setTimeout(next, AUTOPLAY_MS);
+  }
+}
+
+document.getElementById("autoplayBtn").addEventListener("click", () => {
+  autoplayEnabled = !autoplayEnabled;
+  document.getElementById("autoplayBtn").innerHTML = autoplayEnabled
+    ? '<i class="fa-solid fa-pause"></i>'
+    : '<i class="fa-solid fa-play"></i>';
+  render();
+});
+
+document.getElementById("zoneRight").addEventListener("click", () => { stopAutoplayIcon(); next(); });
+document.getElementById("zoneLeft").addEventListener("click", () => { stopAutoplayIcon(); prev(); });
+document.getElementById("nextBtn").addEventListener("click", () => { stopAutoplayIcon(); next(); });
+document.getElementById("prevBtn").addEventListener("click", () => { stopAutoplayIcon(); prev(); });
+
+function stopAutoplayIcon() {
+  // manuelles Navigieren pausiert den Autoplay, ohne ihn zu "beenden"
+  if (autoplayEnabled) {
+    autoplayEnabled = false;
+    document.getElementById("autoplayBtn").innerHTML = '<i class="fa-solid fa-play"></i>';
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight" || e.key === " ") { stopAutoplayIcon(); next(); }
+  if (e.key === "ArrowLeft") { stopAutoplayIcon(); prev(); }
+});
+
+let touchStartX = null;
+document.addEventListener("touchstart", (e) => { touchStartX = e.touches[0].clientX; }, { passive:true });
+document.addEventListener("touchend", (e) => {
+  if (touchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (dx > 50) { stopAutoplayIcon(); prev(); }
+  else if (dx < -50) { stopAutoplayIcon(); next(); }
+  touchStartX = null;
+}, { passive:true });
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#replayBtn")) { current = 0; render(); }
+  if (e.target.closest("#shareBtn")) { shareResults(); }
+});
+
+/* ---------------- Konfetti / Sound / Haptik ---------------- */
+
+const confettiColors = ["#FFD23F", "#FF3E7F", "#2CE6B0", "#3E8EFF", "#FF7A3D"];
+let confettiLaunched = false;
+
+function launchConfetti() {
+  if (confettiLaunched) return;
+  confettiLaunched = true;
+  const wrap = document.querySelector(".s8 #confetti");
+  if (!wrap) return;
+  for (let i = 0; i < 50; i++) {
+    const el = document.createElement("div");
+    el.className = "confetto";
+    const size = 5 + Math.random() * 5;
+    el.style.width = size + "px";
+    el.style.height = size * 0.4 + "px";
+    el.style.left = Math.random() * 100 + "%";
+    el.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+    el.style.animationDuration = (2.2 + Math.random() * 1.6) + "s";
+    el.style.animationDelay = (Math.random() * 0.5) + "s";
+    wrap.appendChild(el);
+  }
+}
+
+/* ---- Soundtrack: leises Ambient-Pad + Whoosh bei jedem Folienwechsel ---- */
+
+let audioCtx = null;
+let masterGain = null;
+let ambientStarted = false;
+let soundEnabled = true;
+
+function ensureAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = soundEnabled ? 1 : 0;
+    masterGain.connect(audioCtx.destination);
+  } catch (e) { /* Audio nicht verfügbar */ }
+}
+
+function startAmbient() {
+  if (!audioCtx || ambientStarted) return;
+  ambientStarted = true;
+  try {
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const ambientGain = audioCtx.createGain();
+    osc1.type = "sine"; osc1.frequency.value = 110;     // A2
+    osc2.type = "sine"; osc2.frequency.value = 164.81;  // E3, leicht verstimmtes Pad
+    ambientGain.gain.value = 0.0001;
+    osc1.connect(ambientGain); osc2.connect(ambientGain);
+    ambientGain.connect(masterGain);
+    osc1.start(); osc2.start();
+    ambientGain.gain.linearRampToValueAtTime(0.018, audioCtx.currentTime + 2.5);
+
+    // sanfte, langsame Bewegung im Pad
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.frequency.value = 0.06;
+    lfoGain.gain.value = 0.007;
+    lfo.connect(lfoGain);
+    lfoGain.connect(ambientGain.gain);
+    lfo.start();
+  } catch (e) { /* Audio nicht verfügbar */ }
+}
+
+function playWhoosh() {
+  if (!audioCtx || !soundEnabled) return;
+  try {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.Q.value = 0.7;
+    filter.frequency.setValueAtTime(1700, t);
+    filter.frequency.exponentialRampToValueAtTime(350, t + 0.22);
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(320, t);
+    osc.frequency.exponentialRampToValueAtTime(70, t + 0.22);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.05, t + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    osc.connect(filter); filter.connect(gain); gain.connect(masterGain);
+    osc.start(t); osc.stop(t + 0.26);
+  } catch (e) { /* Audio nicht verfügbar */ }
+}
+
+document.getElementById("soundBtn").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  ensureAudio();
+  if (masterGain) {
+    masterGain.gain.linearRampToValueAtTime(soundEnabled ? 1 : 0, audioCtx.currentTime + 0.15);
+  }
+  document.getElementById("soundBtn").innerHTML = soundEnabled
+    ? '<i class="fa-solid fa-volume-high"></i>'
+    : '<i class="fa-solid fa-volume-xmark"></i>';
+});
+
+let fanfarePlayed = false;
+function playFanfare() {
+  if (fanfarePlayed) return;
+  fanfarePlayed = true;
+  ensureAudio();
+  if (!audioCtx) return;
+  try {
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, audioCtx.currentTime + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime + i * 0.12 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + i * 0.12 + 0.35);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(audioCtx.currentTime + i * 0.12);
+      osc.stop(audioCtx.currentTime + i * 0.12 + 0.4);
+    });
+  } catch (e) { /* Audio nicht verfügbar – einfach überspringen */ }
+}
+
+function triggerHaptic() {
+  if (navigator.vibrate) navigator.vibrate([90, 40, 90]);
+}
+
+/* ---------------- Teilen ---------------- */
+
+function buildShareText() {
+  const lines = ranked.map((entry, i) => `${i + 1}. ${entry.p[0]} – ${entry.points} Punkte`);
+  return `🏆 Lio Wrapped – Baby-Party Ergebnisse\n\n${lines.join("\n")}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+async function shareResults() {
+  const text = buildShareText();
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Lio Wrapped", text });
+      return;
+    } catch (e) { /* abgebrochen – dann Fallback versuchen */ }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("In die Zwischenablage kopiert!");
+  } catch (e) {
+    showToast("Teilen nicht möglich auf diesem Gerät");
+  }
+}
+
+/* ---------------- Live-Alter ---------------- */
+
+const birthDate = new Date(2026, 8, 8, 11, 11, 0); // 8. September 2026, 11:11 Uhr
+
+function updateAge() {
+  const now = new Date();
+  let years = now.getFullYear() - birthDate.getFullYear();
+  let months = now.getMonth() - birthDate.getMonth();
+  let days = now.getDate() - birthDate.getDate();
+  let hours = now.getHours() - birthDate.getHours();
+  let minutes = now.getMinutes() - birthDate.getMinutes();
+  let seconds = now.getSeconds() - birthDate.getSeconds();
+
+  if (seconds < 0) { seconds += 60; minutes--; }
+  if (minutes < 0) { minutes += 60; hours--; }
+  if (hours < 0) { hours += 24; days--; }
+  if (days < 0) {
+    months--;
+    const prevMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    days += prevMonthLastDay;
+  }
+  if (months < 0) { months += 12; years--; }
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = Math.max(0, val);
+  };
+
+  setVal("ageYears", years);
+  setVal("ageMonths", months);
+  setVal("ageDays", days);
+  setVal("ageHours", hours);
+  setVal("ageMinutes", minutes);
+  setVal("ageSeconds", seconds);
+}
+
+updateAge();
+setInterval(updateAge, 1000);
+
+render();
+</script>
+</body>
+</html>
